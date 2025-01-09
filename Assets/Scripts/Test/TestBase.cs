@@ -28,7 +28,7 @@ public class TestBase : MonoBehaviour
         inputActions.Test.Test3.performed -= OnTest3;
         inputActions.Test.Test1.performed -= OnTest1;
         inputActions.Test.Test2.performed -= OnTest2;
-        inputActions.Enable();
+        inputActions.Disable();
     }
 
     protected virtual void OnTest5(InputAction.CallbackContext context)
