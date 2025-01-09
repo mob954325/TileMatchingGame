@@ -4,15 +4,13 @@ using UnityEngine.EventSystems;
 
 public class SlideObject : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
-    IMoveable moveable;
-
     private Vector2 startVec = Vector2.zero;
     public Vector2 dirVec = Vector2.zero;
 
-    private void Awake()
-    {
-        moveable = GetComponent<IMoveable>();
-    }
+    public Action OnMove_Right;
+    public Action OnMove_Left;
+    public Action OnMove_Up;
+    public Action OnMove_Down;
 
     public void OnBeginDrag(PointerEventData eventData)
     {
@@ -21,24 +19,23 @@ public class SlideObject : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        //Debug.Log($"end Drag : {eventData.position}");
         dirVec = (eventData.position - startVec).normalized;
 
         if(dirVec.x > 0.85f) // RIGHT
         {
-            moveable.MoveObject(MoveDirection.Right);
+            OnMove_Right?.Invoke();
         }
         else if(dirVec.x < -0.85f) // LEFT
         {
-            moveable.MoveObject(MoveDirection.Left);
+            OnMove_Left?.Invoke();
         }
         else if(dirVec.y > 0.85f) // UP
         {
-            moveable.MoveObject(MoveDirection.Up);
+            OnMove_Up?.Invoke();
         }
         else if(dirVec.y < -0.85f) // DOWN
         {
-            moveable.MoveObject(MoveDirection.Down);
+            OnMove_Down?.Invoke();
         }
     }
 

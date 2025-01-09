@@ -1,10 +1,17 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(SlideObject))]
 public class Block_Normal : MonoBehaviour, IMoveable
 {
-    private BlockType type;
-    private Vector2Int gridPos;
+    private BlockType blockType;
+    private BlockColor blockColor;
+
+    private SlideObject slideFunction;
+    public SlideObject SlideFunction { get => slideFunction; private set => slideFunction = value; }
+
+    public Vector2Int gridPos;
     public Vector2Int GridPos
     {
         get => gridPos;
@@ -16,23 +23,36 @@ public class Block_Normal : MonoBehaviour, IMoveable
         }
     }
 
-    IEnumerator lerpMoveProcess;
-
     private float moveSpeed = 2;
     public float MoveSpeed { get => moveSpeed; set => moveSpeed = value; }
+
+    private void Awake()
+    {
+        slideFunction = GetComponent<SlideObject>();
+    }
 
     /// <summary>
     /// 다음 위치까지 가는데 걸리는 시간
     /// </summary>
     public void SetType(BlockType type = BlockType.Normal)
     {
-        this.type = type;
+        blockType = type;
     }
 
     public void MoveObject(Vector2 moveVec)
     {
         Vector2Int moveGrid = new Vector2Int((int)moveVec.x, (int)moveVec.y);
         GridPos += moveGrid;
+    }
+
+    /// <summary>
+    /// 위치값 만큼 현재 위치에서 이동
+    /// </summary>
+    /// <param name="x">현재 위치에서 이동할 x값</param>
+    /// <param name="y">현재 위치에서 이동할 y값</param>
+    public void MoveObject(int x, int y)
+    {
+        MoveObject(new Vector2(x, y));
     }
 
     public void MoveObject(MoveDirection dir)
@@ -67,6 +87,8 @@ public class Block_Normal : MonoBehaviour, IMoveable
 
             yield return null;
         }
+
+        transform.position = new Vector2(gridPos.x * ConstValues.BlockSize, gridPos.y * ConstValues.BlockSize); // 이동후 정확한 위치로 이동
     }
 
     /// <summary>

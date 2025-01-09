@@ -12,6 +12,13 @@ public enum BlockType
     Bomb
 }
 
+public enum BlockColor
+{
+    Red,
+    Blue,
+    Green
+}
+
 /// <summary>
 /// 4방향 움직이는 방향 타입
 /// </summary>
