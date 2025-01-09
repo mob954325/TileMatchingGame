@@ -1,14 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public enum BlockType
-{
-    Normal,
-    Long,
-    Bomb
-}
-
-public class Block_Normal : MonoBehaviour
+public class Block_Normal : MonoBehaviour, IMoveable
 {
     private BlockType type;
     private Vector2Int gridPos;
@@ -18,36 +11,57 @@ public class Block_Normal : MonoBehaviour
         set
         {
             gridPos = value;
+            StopCoroutine(LerpMove((Vector2)gridPos * ConstValues.BlockSize));
             StartCoroutine(LerpMove((Vector2)gridPos * ConstValues.BlockSize));
         }
     }
 
-    /// <summary>
-    /// ´ÙÀ½ À§Ä¡±îÁö °¡´Âµ¥ °É¸®´Â ½Ã°£
-    /// </summary>
-    private float moveToNextTime = 0.5f;
+    IEnumerator lerpMoveProcess;
 
+    private float moveSpeed = 2;
+    public float MoveSpeed { get => moveSpeed; set => moveSpeed = value; }
+
+    /// <summary>
+    /// ë‹¤ìŒ ìœ„ì¹˜ê¹Œì§€ ê°€ëŠ”ë° ê±¸ë¦¬ëŠ” ì‹œê°„
+    /// </summary>
     public void SetType(BlockType type = BlockType.Normal)
     {
         this.type = type;
     }
 
-    /// <summary>
-    /// ±×¸®µå °ªÀ¸·Î ÀÌµ¿ÇÏ´Â ÇÔ¼ö
-    /// </summary>
-    /// <param name="moveVec">ÀÌµ¿°ª</param>
-    public void MoveObject(Vector2Int moveVec)
+    public void MoveObject(Vector2 moveVec)
     {
-        GridPos += moveVec;
+        Vector2Int moveGrid = new Vector2Int((int)moveVec.x, (int)moveVec.y);
+        GridPos += moveGrid;
+    }
+
+    public void MoveObject(MoveDirection dir)
+    {
+        switch(dir)
+        {
+            case MoveDirection.Right:
+                MoveObject(Vector2.right);
+                break;
+            case MoveDirection.Left:
+                MoveObject(Vector2.left);
+                break;
+            case MoveDirection.Up:
+                MoveObject(Vector2.up);
+                break;
+            case MoveDirection.Down:
+                MoveObject(Vector2.down);
+                break;
+        }
     }
 
     private IEnumerator LerpMove(Vector3 goal)
     {
-        float timeElapsed = 0f;;
+        float moveToNextTime = 1f / MoveSpeed;
+        float timeElapsed = 0f;
 
         while(timeElapsed < moveToNextTime)
         {
-            timeElapsed += Time.deltaTime / moveToNextTime;
+            timeElapsed += Time.deltaTime * MoveSpeed;
             Vector3 lerp = Vector3.Lerp(transform.position, goal, timeElapsed);
             transform.position = lerp;
 
@@ -56,11 +70,11 @@ public class Block_Normal : MonoBehaviour
     }
 
     /// <summary>
-    /// ¿ÀºêÁ§Æ® Á¦°Å(ºñÈ°¼ºÈ­)½Ã ½ÇÇàµÇ´Â ÇÔ¼ö
+    /// ì˜¤ë¸Œì íŠ¸ ì œê±°(ë¹„í™œì„±í™”)ì‹œ ì‹¤í–‰ë˜ëŠ” í•¨ìˆ˜
     /// </summary>
     public virtual void OnObjectDisable()
     {
-        // »ç¿ë¾ÈÇÔ
+        // ì‚¬ìš©ì•ˆí•¨
     }
 
     private void OnDisable()
