@@ -1,9 +1,10 @@
+// ê³ ì • ê°’ ëª¨ìŒ
 using UnityEngine;
 
 public static class ConstValues
 {
     /// <summary>
-    /// ºí·Ï ¿ÀºêÁ§Æ® »çÀÌÁî
+    /// ë¸”ë¡ ì˜¤ë¸Œì íŠ¸ ì‚¬ì´ì¦ˆ
     /// </summary>
     public const float BlockSize = 4f;
 }

@@ -1,53 +1,59 @@
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class SlideObject : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    IMoveable moveable;
+
     private Vector2 startVec = Vector2.zero;
     public Vector2 dirVec = Vector2.zero;
 
-    public void OnBeginDrag(PointerEventData eventData)
+    private void Awake()
     {
-        //Debug.Log($"start Drag : {eventData.position}");
-        startVec = eventData.position;
+        moveable = GetComponent<IMoveable>();
     }
 
-    public void OnDrag(PointerEventData eventData)
+    public void OnBeginDrag(PointerEventData eventData)
     {
-        //Debug.Log("Dragged");
+        startVec = eventData.position;
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         //Debug.Log($"end Drag : {eventData.position}");
         dirVec = (eventData.position - startVec).normalized;
-        Debug.Log($"{dirVec}");
 
-        if(dirVec.x > 0.85f)
+        if(dirVec.x > 0.85f) // RIGHT
         {
-            Debug.Log($"right");
+            moveable.MoveObject(MoveDirection.Right);
         }
-        else if(dirVec.x < -0.85f)
+        else if(dirVec.x < -0.85f) // LEFT
         {
-            Debug.Log($"left");
+            moveable.MoveObject(MoveDirection.Left);
         }
-        else if(dirVec.y > 0.85f)
+        else if(dirVec.y > 0.85f) // UP
         {
-            Debug.Log($"up");
+            moveable.MoveObject(MoveDirection.Up);
         }
-        else if(dirVec.y < -0.85f)
+        else if(dirVec.y < -0.85f) // DOWN
         {
-            Debug.Log($"down");
+            moveable.MoveObject(MoveDirection.Down);
         }
+    }
+
+    public void OnDrag(PointerEventData eventData)
+    {
+        // 사용안함
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        Debug.Log("ASDFASDFSAD");
+        // 사용안함
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        Debug.Log("+++");
+        // 사용안함
     }
 }
