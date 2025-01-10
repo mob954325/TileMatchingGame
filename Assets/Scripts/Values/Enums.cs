@@ -14,8 +14,8 @@ public enum BlockType
 
 public enum BlockColor
 {
-    Red,
     Blue,
+    Red,    
     Green
 }
 

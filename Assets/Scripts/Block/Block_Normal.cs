@@ -5,13 +5,18 @@ using UnityEngine;
 [RequireComponent(typeof(SlideObject))]
 public class Block_Normal : MonoBehaviour, IMoveable
 {
+    public Sprite[] sprite;
+    private SpriteRenderer spriteRenderere;
+
     private BlockType blockType;
+    public BlockType BlocType { get => blockType; }
     private BlockColor blockColor;
+    public BlockColor BlockColor { get => blockColor; }
 
     private SlideObject slideFunction;
     public SlideObject SlideFunction { get => slideFunction; private set => slideFunction = value; }
 
-    public Vector2Int gridPos;
+    private Vector2Int gridPos;
     public Vector2Int GridPos
     {
         get => gridPos;
@@ -29,6 +34,13 @@ public class Block_Normal : MonoBehaviour, IMoveable
     private void Awake()
     {
         slideFunction = GetComponent<SlideObject>();
+        spriteRenderere = transform.GetChild(0).GetComponent<SpriteRenderer>();
+    }
+
+    public void SetColor(BlockColor color = BlockColor.Blue)
+    {
+        blockColor = color;
+        spriteRenderere.sprite = sprite[(int)blockColor];
     }
 
     /// <summary>
@@ -37,6 +49,11 @@ public class Block_Normal : MonoBehaviour, IMoveable
     public void SetType(BlockType type = BlockType.Normal)
     {
         blockType = type;
+    }
+
+    public void MoveToCoord(Vector2 goal)
+    {
+        GridPos = new Vector2Int((int)goal.x, (int)goal.y);
     }
 
     public void MoveObject(Vector2 moveVec)
