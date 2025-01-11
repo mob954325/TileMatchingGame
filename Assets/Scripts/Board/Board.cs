@@ -1,12 +1,15 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
-using static Unity.Collections.AllocatorManager;
 
 public class Board : MonoBehaviour
 {
+    /// <summary>
+    /// 블록 저장 배열 [y, x]
+    /// </summary>
     private List<Block_Normal> blockList;
 
     public Action<float> onGetScore;
@@ -16,11 +19,11 @@ public class Board : MonoBehaviour
     /// <summary>
     /// 보드 가로칸 개수
     /// </summary>
-    private int size_X = 6;
+    private int size_X = 3;
     /// <summary>
     /// 보드 세로칸 개수
     /// </summary>
-    private int size_Y = 12;
+    private int size_Y = 3;
 
     /// <summary>
     /// size_X * size_Y 값 ( awake에서 초기화됨 )
@@ -39,18 +42,10 @@ public class Board : MonoBehaviour
         isInit = false;
     }
 
-    private void LateUpdate()
-    {
-        if(isInit && blockList.Count == size_X * size_Y)
-        {
-            CheckTileMatch();
-        }
-    }
-
     public void Init()
     {
         capacity = size_X * size_Y;
-        blockList = new List<Block_Normal>(capacity);
+        blockList = new List<Block_Normal>();
 
         for (int i = 0; i < size_X * size_Y; i++)
         {
@@ -58,7 +53,8 @@ public class Board : MonoBehaviour
 
             int pos_X = i % size_X;
             int pos_Y = i / size_X;
-            SpawnBlock(pos_X, pos_Y);
+
+            SpawnBlock(new Vector2 (pos_X, pos_Y));
         }
 
         isInit = true;
@@ -68,112 +64,150 @@ public class Board : MonoBehaviour
     {
         // 모든 블록 탐색
         // 블록중 가로나 새로로 같은 색깔의 블록이 있으면 해당 블록 제거
-        //  어떻게 찾지
         // 제거되면 제거된 만큼 새로운 블록 생성
 
         List<Block_Normal> removeList = new List<Block_Normal>(capacity);
-        Queue<Block_Normal> checkQueue = new Queue<Block_Normal>(capacity);
-        List<Vector2> dirList = new List<Vector2> { new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1) };
-        int count = 0; // 루프 방지용 변수
+        List<Vector2> dirList = new List<Vector2> { new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1) }; // 이동방향
 
-        for(int i = 0; i < capacity; i++)
+
+        for(int y = 0; y < size_Y; y++)
         {
-            checkQueue.Enqueue(blockList[i]);
+            for(int x = 0; x < size_X; x++)
+            {
+                Block_Normal block = FindBlock(x, y);
+                if (removeList.Contains(block)) continue; // 이미 제거 목록에 있다.
+
+                List<Block_Normal> result = FloodFill(new Vector2Int(x, y), block.BlockColor);
+
+                if (result.Count < 3) continue;         // 3개 미만이다
+                for(int i = 0; i < result.Count; i++)   // 제거 리스트 추가
+                {
+                    if (removeList.Contains(result[i])) continue; // 중복 제거
+
+                    removeList.Add(result[i]);
+                }
+            }
         }
 
-        while (checkQueue.Count > 0)
+        AddScoreAtList(removeList);
+        AllBlockPullDown();
+        FillBoard();
+    }
+
+    // CheckTileMatch 관련 함수 ====================================================================
+
+    private List<Block_Normal> FloodFill(Vector2Int startCoord,BlockColor targetColor)
+    {
+        // Flood Fill 알고리즘 사용
+        // DFS
+        // 4방향 체크, targetColor 값을 가진 블록을 찾고 3개 이상 연속되면 반환 값에 넣기
+
+        List<Block_Normal> result = new List<Block_Normal>(capacity);
+        List<Block_Normal> vertialResult = new List<Block_Normal>(size_Y);
+        List<Block_Normal> horizonResult = new List<Block_Normal>(size_X);
+        Stack<Block_Normal> s = new Stack<Block_Normal>(capacity);
+        Block_Normal startBlock = FindBlock(startCoord);
+        
+        bool[] visited = new bool[capacity];
+        int[] dir_X = {1, -1, 0, 0};
+        int[] dir_Y = {0, 0, 1, -1};
+        int count = 0; // 루프 방지 카운트
+
+        // 초기화
+        for(int i = 0; i < capacity; i++)
         {
-            if (count > int.MaxValue) // 무한 루프 방지
+            visited[i] = false;
+        }
+        s.Clear();
+
+        s.Push(startBlock);             // 스택 데이터 추가
+        vertialResult.Add(startBlock);  // 가로 데이터 추가
+        horizonResult.Add(startBlock);  // 세로 데이터 추가
+
+        while(s.Count > 0)
+        {
+            // 무한 루프 방지
+            count++;
+            if (count > capacity + 1)
             {
-                Debug.Log("범위 초과");
+                Debug.Log("FloodFill Overflow");
                 break;
             }
 
-            Block_Normal curBlock = checkQueue.Peek();            
-            checkQueue.Dequeue();
-            if (removeList.Contains(curBlock)) continue; // 이미 제거 리스트에 있으면 다음
+            Block_Normal cur = s.Peek();
+            s.Pop();
 
-            if(curBlock != null)
+            visited[cur.GridPos.y * size_X + cur.GridPos.x] = true;
+
+            for (int i = 0; i < 4; i++)
             {
-                BlockColor curBlockColor = curBlock.BlockColor; // 비교할 블록 색
-                for(int i = 0; i < 4; i++) // 4방향 확인
+                Vector2Int next = new Vector2Int(cur.GridPos.x + dir_X[i], cur.GridPos.y + dir_Y[i]);
+                Block_Normal nextBlock = FindBlock(next);
+                if (!IsValidPosition(next)) continue;
+                if (!visited[next.y * size_X + next.x] && nextBlock.BlockColor == targetColor)
                 {
-                    List<Block_Normal> addList = new List<Block_Normal>(capacity);
-                    Vector2 nextVec = curBlock.GridPos + dirList[i];
-
-                    addList.Add(curBlock);
-                    int sameCount = 1;
-
-                    if (!IsValidPosition(nextVec)) continue; // 존재하지 않는 위치면 무시
-                    else
+                    if (i < 2 && startCoord.y == nextBlock.GridPos.y) // X
                     {
-                        Block_Normal check = FindBlock((int)nextVec.x, (int)nextVec.y);
-                        if (check == null) break; // 잘못된 위치면 무시
-
-                        int remain = 0; // 현재 좌표로부터 마지막 좌표까지의 거리
-
-                        if (i < 2) // 가로, 세로 확인인지 확인
-                        {
-                            remain = size_X - (int)nextVec.x;
-                        }
-                        else
-                        {
-                            remain = size_Y - (int)nextVec.y;
-                        }
-
-                        // 같은 블록 찾기
-                        for(int j = 0; j < remain; j++)
-                        {
-                            if (check == null || check.BlockColor != curBlockColor) break; // 색깔이 같지 않으면 다음 방향확인
-                            else
-                            {
-                                addList.Add(check);
-                                sameCount++;
-                                nextVec += dirList[i];
-
-                                check = FindBlock((int)nextVec.x, (int)nextVec.y);
-                            }
-                        } // for (같은 블록 찾기)
-
-                        if(sameCount > 2)
-                        {
-                            for(int j = 0; j < addList.Count; j++)
-                            {
-                                if (!removeList.Contains(addList[j])) // 중복 블록 방지
-                                    removeList.Add(addList[j]);
-                            }
-                        }
+                        vertialResult.Add(nextBlock); 
                     }
-                } // for (4방향)
+                    else if (i >= 2 && startCoord.x == nextBlock.GridPos.x) // Y
+                    {
+                        horizonResult.Add(nextBlock); 
+                    }
+
+                    s.Push(nextBlock);                    
+                }
             }
-            else
+        }
+
+        // 조건에 맞으면 결과값에 추가
+        if(vertialResult.Count >= 3) // 가로가 3칸이상 동일하면 추가
+        {
+            for(int i = 0; i <  vertialResult.Count; i++)
             {
-                continue;
+                result.Add(vertialResult[i]);
             }
+        }
+        else if(horizonResult.Count >= 3) // 세로가 3칸이상 동일하면 추가
+        {
+            for (int i = 0; i < horizonResult.Count; i++)
+            {
+                result.Add(horizonResult[i]);
+            }
+        }
 
-            count++;
-        } // while ( 모든 블록 체크 )
+        return result;
+    }
 
-        BlockColor color = BlockColor.Blue;
+    /// <summary>
+    /// 리스트에 있는 블록을 제거하고 점수를 얻는 함수
+    /// </summary>
+    /// <param name="removeList">제거할블록 리스트</param>
+    private void AddScoreAtList(List<Block_Normal> removeList)
+    {
+        if (removeList.Count == 0) return;
+
+        // 점수 콤보를 위한 색깔 정렬
+        removeList.Sort((a, b) =>
+        {
+            if (a.BlockColor == b.BlockColor) return 0;
+            else return a.BlockColor > b.BlockColor ? 1 : -1;
+        });
+
+        BlockColor color = removeList[0].BlockColor;
         int combo = 1;
+
         // 블록 제거
         for (int i = 0; i < removeList.Count; i++)
         {
-            removeList.Sort((a,b) =>
-            {   // 점수 콤보를 위한 색깔 정렬
-                if (a.BlockColor == b.BlockColor) return 0;
-                else return a.BlockColor > b.BlockColor ? 1 : -1; 
-            }); 
-
-            GameObject obj = removeList[i].gameObject;
-            Block_Normal block = blockList.Find(x => x.GridPos == removeList[i].GridPos);
+            Block_Normal block = removeList[i];
 
             // 점수 추가
-            if(color == block.BlockColor)
+            if (color == block.BlockColor)
             {
                 combo++;
             }
-            else
+            else // 색 바뀌면 이전에 처리했던 점수 추가
             {
                 onGetScore?.Invoke(SingleBlockScore * combo);
                 // 다음 색깔
@@ -181,42 +215,56 @@ public class Board : MonoBehaviour
                 combo = 1;
             }
 
+            onGetScore?.Invoke(SingleBlockScore * combo); // 마지막 색깔 점수 추가
             RemoveBlock(block);
         }
+    }
 
-        // 블록 내리기
-        for(int x = 0; x < size_X; x++)
-        {
-            for(int y = 0; y < size_Y; y++)
-            {
-                if (FindBlock(x, y) != null) continue;
-
-                for(int i = y + 1; i < size_Y; i++)
-                {
-                    Block_Normal block = FindBlock(x, i);
-                    if(block != null)
-                    {
-                        block.MoveObject(MoveDirection.Down);
-                    }
-                }
-            }
-        }
-
+    /// <summary>
+    /// 보드 빈칸 채우는 함수
+    /// </summary>
+    private void FillBoard()
+    {
         // 블록 추가
         for (int x = 0; x < size_X; x++)
         {
-            int emptyCount = 0;
             for (int y = 0; y < size_Y; y++)
             {
                 Block_Normal block = FindBlock(x, y);
                 if (block == null)
                 {
                     // 오브젝트 생성
-                    SpawnBlock(x, y);
+                    SpawnBlock(new Vector2(x, y));
                 }
             }
         }
     }
+
+    /// <summary>
+    /// 모든 블록 밑으로 내리기 (밑에 있는 빈칸 채우기)
+    /// </summary>
+    private void AllBlockPullDown()
+    {
+        for (int x = 0; x < size_X; x++)
+        {
+            for (int y = 0; y < size_Y; y++)
+            {
+                if (FindBlock(x, y) != null) continue;
+
+                for (int i = y + 1; i < size_Y; i++)
+                {
+                    Block_Normal block = FindBlock(x, i);
+                    if (block == null) continue; // 유요하지 않는 좌표
+                    else
+                    {
+                        block.MoveObject(MoveDirection.Down);
+                    }
+                }
+            }
+        }
+    }
+
+    // 기능 함수 ====================================================================
 
     private Block_Normal SpawnBlock(Vector2 pos)
     {
@@ -245,11 +293,6 @@ public class Board : MonoBehaviour
         return createdBlock;
     }
 
-    private Block_Normal SpawnBlock(int x, int y)
-    {
-        return SpawnBlock(new Vector2(x, y));
-    }
-
     private void RemoveBlock(Block_Normal block)
     {
         if (block == null) return;
@@ -258,9 +301,9 @@ public class Board : MonoBehaviour
         Destroy(block.gameObject);
     }
 
-    private void RemoveBlock(Vector2 vec)
+    private void RemoveBlock(Vector2 pos)
     {
-        Block_Normal block = blockList.Find(x => x.GridPos == vec);
+        Block_Normal block = FindBlock(pos);
         RemoveBlock(block);
     }
 
@@ -268,6 +311,32 @@ public class Board : MonoBehaviour
     {
         RemoveBlock(new Vector2(x, y));
     }
+
+    public Block_Normal FindBlock(Vector2 grid)
+    {
+        if (!IsValidPosition((int)grid.x, (int)grid.y)) return null;
+
+        Block_Normal block = blockList.Find(x => x.GridPos == grid);
+
+        return block;
+    }
+
+    public Block_Normal FindBlock(int grid_X, int grid_Y)
+    {
+        return FindBlock(new Vector2(grid_X, grid_Y));
+    }
+
+    private bool IsValidPosition(Vector2 position)
+    {
+        return position.x >= 0 && position.x < size_X && position.y >= 0 && position.y < size_Y;
+    }
+
+    private bool IsValidPosition(int x, int y)
+    {
+        return IsValidPosition(new Vector2(x, y));
+    }
+
+    // 블록 기능 함수 =====================================================================
 
     private void SwapBlockPosition(Block_Normal curBlock, MoveDirection dirType)
     {
@@ -308,30 +377,5 @@ public class Board : MonoBehaviour
             curBlock.MoveObject(dirType);
             targetBlock.MoveObject(MoveDirection.Up);
         }
-    }
-
-
-    public Block_Normal FindBlock(Vector2 grid)
-    {
-        return FindBlock((int)grid.x, (int)grid.y);
-    }
-
-    public Block_Normal FindBlock(int grid_X, int grid_Y)
-    {
-        if (!IsValidPosition(grid_X, grid_Y)) return null;
-
-        Block_Normal block = blockList.Find(x => x.GridPos == new Vector2(grid_X, grid_Y));
-
-        return block;
-    }
-
-    private bool IsValidPosition(Vector2 position)
-    {
-        return position.x >= 0 && position.x < size_X && position.y >= 0 && position.y < size_Y;
-    }
-
-    private bool IsValidPosition(int x, int y)
-    {
-        return IsValidPosition(new Vector2(x, y));
     }
 }

@@ -112,7 +112,6 @@ public class Block_Normal : MonoBehaviour, IMoveable
     /// </summary>
     public virtual void OnObjectDisable()
     {
-        // 사용안함
     }
 
     private void OnDisable()

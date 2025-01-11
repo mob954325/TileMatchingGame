@@ -12,6 +12,14 @@ public class SlideObject : MonoBehaviour, IPointerEnterHandler, IPointerExitHand
     public Action OnMove_Up;
     public Action OnMove_Down;
 
+    private void OnDisable()
+    {
+        OnMove_Right = null;
+        OnMove_Left = null;
+        OnMove_Up = null;
+        OnMove_Down = null;
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         startVec = eventData.position;

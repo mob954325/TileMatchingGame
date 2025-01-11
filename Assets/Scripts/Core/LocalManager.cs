@@ -7,8 +7,19 @@ public class LocalManager : MonoBehaviour
 
     public Action OnGameStart;
     public Action OnGameEnd;
+    public Action<float> OnScoreChange;
 
-    public float score; 
+    public float score;
+
+    private float Score
+    {
+        get => score;
+        set
+        {
+            score = value;
+            OnScoreChange?.Invoke(score);
+        }
+    }
 
     private void Awake()
     {
@@ -21,10 +32,11 @@ public class LocalManager : MonoBehaviour
         board.onGetScore += AddScore;
 
         OnGameStart?.Invoke();
+        Score = 0;
     }
 
     private void AddScore(float value)
     {
-        score += value;
+        Score += value;
     }
 }
