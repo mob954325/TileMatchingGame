@@ -93,10 +93,9 @@ public class Block_Normal : MonoBehaviour, IMoveable
 
     private IEnumerator LerpMove(Vector3 goal)
     {
-        float moveToNextTime = 1f / MoveSpeed;
         float timeElapsed = 0f;
 
-        while(timeElapsed < moveToNextTime)
+        while(timeElapsed < 1f)
         {
             timeElapsed += Time.deltaTime * MoveSpeed;
             Vector3 lerp = Vector3.Lerp(transform.position, goal, timeElapsed);
