@@ -16,7 +16,8 @@ public enum BlockColor
 {
     Blue,
     Red,    
-    Green
+    Green,
+    Yellow
 }
 
 /// <summary>

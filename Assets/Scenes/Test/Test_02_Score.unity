@@ -628,17 +628,6 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d00bb174e7b3b644db52972d6f55dcfb, type: 3}
---- !u!114 &1100931859 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 969929918029079729, guid: c43d43545ad8ad846bc5731291cbf21a, type: 3}
-  m_PrefabInstance: {fileID: 1311343924515137384}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d2836f41a4b91f43b8eb936ffed1a91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1407752214
 GameObject:
   m_ObjectHideFlags: 0
@@ -781,9 +770,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1785919868}
-  - component: {fileID: 1785919869}
   m_Layer: 0
-  m_Name: Test_01_Board
+  m_Name: Test_02_Score
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -804,19 +792,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1785919869
+--- !u!1 &1854776586
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1854776588}
+  - component: {fileID: 1854776587}
+  m_Layer: 0
+  m_Name: LocalManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1854776587
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1785919867}
+  m_GameObject: {fileID: 1854776586}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9fd1bba23517b4447a46caddb1e944b3, type: 3}
+  m_Script: {fileID: 11500000, guid: 7bf44134fb4e0844aa537e594066ba2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  board: {fileID: 1100931859}
+  score: 0
+--- !u!4 &1854776588
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854776586}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 5.523548, y: 6.167443, z: -0.0039329445}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1918897737
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -935,7 +955,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1. Board Test
+  m_text: 2. Score
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -1223,6 +1243,7 @@ SceneRoots:
   - {fileID: 619394802}
   - {fileID: 2146536576}
   - {fileID: 1407752218}
+  - {fileID: 1854776588}
   - {fileID: 467936624}
   - {fileID: 1311343924515137384}
   - {fileID: 2548119354200424801}

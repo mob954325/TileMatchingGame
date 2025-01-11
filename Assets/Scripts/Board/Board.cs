@@ -9,21 +9,43 @@ public class Board : MonoBehaviour
 {
     private List<Block_Normal> blockList;
 
+    public Action<float> onGetScore;
+
     public GameObject blockPrefab;
 
     /// <summary>
     /// 보드 가로칸 개수
     /// </summary>
-    private int size_X = 3;
+    private int size_X = 6;
     /// <summary>
     /// 보드 세로칸 개수
     /// </summary>
-    private int size_Y = 2;
+    private int size_Y = 12;
 
     /// <summary>
     /// size_X * size_Y 값 ( awake에서 초기화됨 )
     /// </summary>
     private int capacity = -1;
+
+    public float SingleBlockScore = 50;
+
+    /// <summary>
+    /// 초기화 확인 여부
+    /// </summary>
+    private bool isInit = false;
+
+    private void Awake()
+    {
+        isInit = false;
+    }
+
+    private void LateUpdate()
+    {
+        if(isInit && blockList.Count == size_X * size_Y)
+        {
+            CheckTileMatch();
+        }
+    }
 
     public void Init()
     {
@@ -38,6 +60,8 @@ public class Board : MonoBehaviour
             int pos_Y = i / size_X;
             SpawnBlock(pos_X, pos_Y);
         }
+
+        isInit = true;
     }
 
     private void CheckTileMatch()
@@ -100,7 +124,7 @@ public class Board : MonoBehaviour
                         // 같은 블록 찾기
                         for(int j = 0; j < remain; j++)
                         {
-                            if (check == null || check.BlockColor != curBlockColor) break;
+                            if (check == null || check.BlockColor != curBlockColor) break; // 색깔이 같지 않으면 다음 방향확인
                             else
                             {
                                 addList.Add(check);
@@ -115,7 +139,8 @@ public class Board : MonoBehaviour
                         {
                             for(int j = 0; j < addList.Count; j++)
                             {
-                                removeList.Add(addList[j]);
+                                if (!removeList.Contains(addList[j])) // 중복 블록 방지
+                                    removeList.Add(addList[j]);
                             }
                         }
                     }
@@ -129,11 +154,33 @@ public class Board : MonoBehaviour
             count++;
         } // while ( 모든 블록 체크 )
 
+        BlockColor color = BlockColor.Blue;
+        int combo = 1;
         // 블록 제거
         for (int i = 0; i < removeList.Count; i++)
         {
+            removeList.Sort((a,b) =>
+            {   // 점수 콤보를 위한 색깔 정렬
+                if (a.BlockColor == b.BlockColor) return 0;
+                else return a.BlockColor > b.BlockColor ? 1 : -1; 
+            }); 
+
             GameObject obj = removeList[i].gameObject;
             Block_Normal block = blockList.Find(x => x.GridPos == removeList[i].GridPos);
+
+            // 점수 추가
+            if(color == block.BlockColor)
+            {
+                combo++;
+            }
+            else
+            {
+                onGetScore?.Invoke(SingleBlockScore * combo);
+                // 다음 색깔
+                color = block.BlockColor;
+                combo = 1;
+            }
+
             RemoveBlock(block);
         }
 
@@ -178,6 +225,8 @@ public class Board : MonoBehaviour
 
         // 블록 생성
         GameObject obj = Instantiate(blockPrefab);
+        obj.transform.position = new Vector2(x * ConstValues.BlockSize, (size_Y + 1) * ConstValues.BlockSize);
+
         Block_Normal createdBlock = obj.GetComponent<Block_Normal>();
         blockList.Add(createdBlock);
         createdBlock.MoveToCoord(new Vector2Int(x, y));
