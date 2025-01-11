@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using static Unity.Collections.AllocatorManager;
 
 public class Board : MonoBehaviour
 {
@@ -13,11 +14,11 @@ public class Board : MonoBehaviour
     /// <summary>
     /// 보드 가로칸 개수
     /// </summary>
-    private int size_X = 4;
+    private int size_X = 3;
     /// <summary>
     /// 보드 세로칸 개수
     /// </summary>
-    private int size_Y = 4;
+    private int size_Y = 2;
 
     /// <summary>
     /// size_X * size_Y 값 ( awake에서 초기화됨 )
@@ -32,25 +33,10 @@ public class Board : MonoBehaviour
         for (int i = 0; i < size_X * size_Y; i++)
         {
             // 블록 오브젝트 생성
-            GameObject obj = Instantiate(blockPrefab);
-            Block_Normal block = obj.GetComponent<Block_Normal>();
-            blockList.Add(block);
 
-            int colorRand = UnityEngine.Random.Range(0, Enum.GetValues(typeof(BlockColor)).Length);
-            block.SetColor((BlockColor)colorRand);
-
-            // 위치로 이동
             int pos_X = i % size_X;
             int pos_Y = i / size_X;
-
-            obj.name = $"{pos_X}, {pos_Y}";
-
-            block.MoveObject(pos_X, pos_Y);
-
-            block.SlideFunction.OnMove_Right += () => { SwapBlockPosition(block, MoveDirection.Right); CheckTileMatch(); };
-            block.SlideFunction.OnMove_Left += () => { SwapBlockPosition(block, MoveDirection.Left); CheckTileMatch(); };
-            block.SlideFunction.OnMove_Up += () => { SwapBlockPosition(block, MoveDirection.Up); CheckTileMatch(); };
-            block.SlideFunction.OnMove_Down += () => { SwapBlockPosition(block, MoveDirection.Down); CheckTileMatch(); };
+            SpawnBlock(pos_X, pos_Y);
         }
     }
 
@@ -71,7 +57,6 @@ public class Board : MonoBehaviour
             checkQueue.Enqueue(blockList[i]);
         }
 
-        //while (checkedList.Count < capacity)
         while (checkQueue.Count > 0)
         {
             if (count > int.MaxValue) // 무한 루프 방지
@@ -82,6 +67,7 @@ public class Board : MonoBehaviour
 
             Block_Normal curBlock = checkQueue.Peek();            
             checkQueue.Dequeue();
+            if (removeList.Contains(curBlock)) continue; // 이미 제거 리스트에 있으면 다음
 
             if(curBlock != null)
             {
@@ -90,7 +76,9 @@ public class Board : MonoBehaviour
                 {
                     List<Block_Normal> addList = new List<Block_Normal>(capacity);
                     Vector2 nextVec = curBlock.GridPos + dirList[i];
-                    int sameCount = 0;
+
+                    addList.Add(curBlock);
+                    int sameCount = 1;
 
                     if (!IsValidPosition(nextVec)) continue; // 존재하지 않는 위치면 무시
                     else
@@ -98,7 +86,7 @@ public class Board : MonoBehaviour
                         Block_Normal check = FindBlock((int)nextVec.x, (int)nextVec.y);
                         if (check == null) break; // 잘못된 위치면 무시
 
-                        int remain = 0;
+                        int remain = 0; // 현재 좌표로부터 마지막 좌표까지의 거리
 
                         if (i < 2) // 가로, 세로 확인인지 확인
                         {
@@ -110,20 +98,16 @@ public class Board : MonoBehaviour
                         }
 
                         // 같은 블록 찾기
-                        for(int j = 0; j <= remain; j++)
+                        for(int j = 0; j < remain; j++)
                         {
-                            
-                            if (check.BlockColor != curBlockColor) break;
+                            if (check == null || check.BlockColor != curBlockColor) break;
                             else
                             {
+                                addList.Add(check);
+                                sameCount++;
+                                nextVec += dirList[i];
+
                                 check = FindBlock((int)nextVec.x, (int)nextVec.y);
-                                if (check == null) break; // 잘못된 위치면 무시
-                                else
-                                {
-                                    addList.Add(check);
-                                    sameCount++;
-                                    nextVec += dirList[i];
-                                }
                             }
                         } // for (같은 블록 찾기)
 
@@ -150,8 +134,7 @@ public class Board : MonoBehaviour
         {
             GameObject obj = removeList[i].gameObject;
             Block_Normal block = blockList.Find(x => x.GridPos == removeList[i].GridPos);
-            blockList.Remove(block);
-            Destroy(obj); 
+            RemoveBlock(block);
         }
 
         // 블록 내리기
@@ -182,23 +165,59 @@ public class Board : MonoBehaviour
                 if (block == null)
                 {
                     // 오브젝트 생성
-                    GameObject obj = Instantiate(blockPrefab);
-                    Block_Normal createdBlock = obj.GetComponent<Block_Normal>();
-                    blockList.Add(createdBlock);
-                    createdBlock.MoveToCoord(new Vector2Int(x, y));
-
-                    int colorRand = UnityEngine.Random.Range(0, Enum.GetValues(typeof(BlockColor)).Length);
-                    createdBlock.SetColor((BlockColor)colorRand);
-
-                    obj.name = $"{x}, {y}";
-
-                    createdBlock.SlideFunction.OnMove_Right += () => { SwapBlockPosition(createdBlock, MoveDirection.Right); CheckTileMatch(); };
-                    createdBlock.SlideFunction.OnMove_Left += () => { SwapBlockPosition(createdBlock, MoveDirection.Left); CheckTileMatch(); };
-                    createdBlock.SlideFunction.OnMove_Up += () => { SwapBlockPosition(createdBlock, MoveDirection.Up); CheckTileMatch(); };
-                    createdBlock.SlideFunction.OnMove_Down += () => { SwapBlockPosition(createdBlock, MoveDirection.Down); CheckTileMatch(); };
+                    SpawnBlock(x, y);
                 }
             }
         }
+    }
+
+    private Block_Normal SpawnBlock(Vector2 pos)
+    {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+
+        // 블록 생성
+        GameObject obj = Instantiate(blockPrefab);
+        Block_Normal createdBlock = obj.GetComponent<Block_Normal>();
+        blockList.Add(createdBlock);
+        createdBlock.MoveToCoord(new Vector2Int(x, y));
+
+        // 색갈 랜덤 지정
+        int colorRand = UnityEngine.Random.Range(0, Enum.GetValues(typeof(BlockColor)).Length);
+        createdBlock.SetColor((BlockColor)colorRand);
+
+        // 슬라이드 액션
+        createdBlock.SlideFunction.OnMove_Right += () => { SwapBlockPosition(createdBlock, MoveDirection.Right); CheckTileMatch(); };
+        createdBlock.SlideFunction.OnMove_Left += () => { SwapBlockPosition(createdBlock, MoveDirection.Left); CheckTileMatch(); };
+        createdBlock.SlideFunction.OnMove_Up += () => { SwapBlockPosition(createdBlock, MoveDirection.Up); CheckTileMatch(); };
+        createdBlock.SlideFunction.OnMove_Down += () => { SwapBlockPosition(createdBlock, MoveDirection.Down); CheckTileMatch(); };
+
+        obj.name = $"{createdBlock.BlockColor.ToString()}";
+        return createdBlock;
+    }
+
+    private Block_Normal SpawnBlock(int x, int y)
+    {
+        return SpawnBlock(new Vector2(x, y));
+    }
+
+    private void RemoveBlock(Block_Normal block)
+    {
+        if (block == null) return;
+
+        blockList.Remove(block);
+        Destroy(block.gameObject);
+    }
+
+    private void RemoveBlock(Vector2 vec)
+    {
+        Block_Normal block = blockList.Find(x => x.GridPos == vec);
+        RemoveBlock(block);
+    }
+
+    private void RemoveBlock(int x, int y)
+    {
+        RemoveBlock(new Vector2(x, y));
     }
 
     private void SwapBlockPosition(Block_Normal curBlock, MoveDirection dirType)
@@ -241,6 +260,7 @@ public class Board : MonoBehaviour
             targetBlock.MoveObject(MoveDirection.Up);
         }
     }
+
 
     public Block_Normal FindBlock(Vector2 grid)
     {
