@@ -13,7 +13,7 @@ public class LocalManager : MonoBehaviour
     public Action<float> OnScoreChange;
     public Action<float> OnTimerValueChange;
 
-    private float MaxTime = 2;
+    private float MaxTime = 60;
     private float remainTime = -1;
 
     private bool isPause = false;
