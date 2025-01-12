@@ -30,3 +30,10 @@ public enum MoveDirection
     Up,
     Down
 }
+
+public enum SoundType
+{
+    Open,
+    Close,
+    Pop
+}

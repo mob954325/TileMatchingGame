@@ -4,6 +4,12 @@ using UnityEngine.SceneManagement;
 
 public class LocalManager : MonoBehaviour
 {
+    private SoundManager soundManager;
+    public SoundManager SoundManager
+    {
+        get => soundManager;
+        private set => soundManager = value;
+    }
     private Board board;
     private InputController input;
 
@@ -45,6 +51,7 @@ public class LocalManager : MonoBehaviour
 
     private void Awake()
     {
+        soundManager = FindAnyObjectByType<SoundManager>(); 
         board = FindAnyObjectByType<Board>();
         input = FindAnyObjectByType<InputController>();
     }
@@ -94,12 +101,14 @@ public class LocalManager : MonoBehaviour
     {
         isPause = true;
         OnGamePause?.Invoke();
+        soundManager.PlaySound(SoundType.Open);
     }
 
     public void OnUnpause()
     {
         isPause = false;
         OnGamePause?.Invoke();
+        soundManager.PlaySound(SoundType.Close);
     }
 
     /// <summary>

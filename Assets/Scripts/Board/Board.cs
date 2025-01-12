@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class Board : MonoBehaviour
 {
+    private LocalManager manager;
+
     /// <summary>
     /// 블록 저장 배열 [y, x]
     /// </summary>
@@ -39,6 +41,7 @@ public class Board : MonoBehaviour
 
     private void Awake()
     {
+        manager = FindAnyObjectByType<LocalManager>();
         isInit = false;
     }
 
@@ -314,6 +317,7 @@ public class Board : MonoBehaviour
 
         blockList.Remove(block);
         Destroy(block.gameObject);
+        manager.SoundManager.PlaySound(SoundType.Pop);
     }
 
     private void RemoveBlock(Vector2 pos)
