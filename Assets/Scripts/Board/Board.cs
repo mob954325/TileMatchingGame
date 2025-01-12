@@ -19,11 +19,11 @@ public class Board : MonoBehaviour
     /// <summary>
     /// 보드 가로칸 개수
     /// </summary>
-    private int size_X = 3;
+    private int size_X = 6;
     /// <summary>
     /// 보드 세로칸 개수
     /// </summary>
-    private int size_Y = 3;
+    private int size_Y = 12;
 
     /// <summary>
     /// size_X * size_Y 값 ( awake에서 초기화됨 )
@@ -60,6 +60,18 @@ public class Board : MonoBehaviour
         isInit = true;
     }
 
+    private IEnumerator SpawnDelayProcess()
+    {
+        float timeElapsed = 0f;
+
+        while(timeElapsed < 0.7f)
+        {
+            timeElapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        if (blockList.Count == size_X * size_Y) CheckTileMatch();
+    }
     private void CheckTileMatch()
     {
         // 모든 블록 탐색
@@ -290,6 +302,9 @@ public class Board : MonoBehaviour
         createdBlock.SlideFunction.OnMove_Down += () => { SwapBlockPosition(createdBlock, MoveDirection.Down); CheckTileMatch(); };
 
         obj.name = $"{createdBlock.BlockColor.ToString()}";
+
+        StartCoroutine(SpawnDelayProcess());       
+
         return createdBlock;
     }
 
